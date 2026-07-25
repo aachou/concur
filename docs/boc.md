@@ -1,5 +1,5 @@
-<h1 align="center">When Concurrency Matters:</h1>
-<h2 align="center">Behaviour-Oriented Concurrency</h2>
+<h1 align="center">Behaviour-Oriented Concurrency</h1>
+<p align="center">LUKE CHEESEMAN & MATTHEW J. PARKINSON</p>
 
 Expressing parallelism and coordination is central for modern concurrent programming. Many mechanisms exist for expressing both parallelism and coordination. However, the design decisions for these two mechanisms are tightly intertwined. We believe that the interdependence of these two mechanisms should be recognised and achieved through a single, powerful primitive. We are not the first to realise this: the prime example is actor model programming, where parallelism arises through fine-grained decomposition of a program's state into actors that are able to execute independently in parallel. However, actor model programming has a serious pain point: updating multiple actors as a single atomic operation is a challenging task.
 

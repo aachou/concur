@@ -1,4 +1,5 @@
-# BoC 论文总结
+<h1 align="center">Behaviour-Oriented Concurrency</h1>
+<p align="center">LUKE CHEESEMAN & MATTHEW J. PARKINSON</p>
 
 Behaviour-Oriented Concurrency（BoC）通过 `when` 原语统一并行与协调。程序状态分解为隔离的 cown（并发拥有者）；behaviour（行为）是异步工作单元，声明所需 cown 后原子获取、执行、释放。BoC 保证无数据竞争、无死锁，支持跨多资源协调，性能与 Actor 相当甚至更优。
 
