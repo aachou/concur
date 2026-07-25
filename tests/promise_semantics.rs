@@ -61,7 +61,7 @@ mod message_adjacency {
     //!
     //! ## 对应文档
     //!
-    //! ```rust
+    //! ```text
     //! r1 = X.fetch_add(1)       ||        r2 = X.fetch_add(1)
     //! ```
     //!
@@ -219,7 +219,7 @@ mod views {
     /// 时刻线程的完整视图）；Acquire load 将该 message view 合并到当前线程的 view 中。
     ///
     /// 对应文档：
-    /// ```rust
+    /// ```text
     /// X = 1;                        ||   if Y.load(acquire) == 1:
     /// Y.store(1, release);          ||       assert!(X == 1);  // 一定成功
     /// ```
@@ -257,7 +257,7 @@ mod views {
     /// 两者的最新值，使得即使使用 `Relaxed` 操作也能跨线程传递消息。
     ///
     /// 对应文档：
-    /// ```rust
+    /// ```text
     /// X = 1;              ||   if Y.load(relaxed) == 1 {
     /// fence(SC);          ||       fence(SC);
     /// Y.store(1, relaxed);||       assert!(X == 1);
@@ -297,7 +297,7 @@ mod views {
 
     /// 对照测试：全部使用 `Relaxed`，不做任何同步。
     ///
-    /// ```rust
+    /// ```text
     /// X = 1;                        ||   if Y.load() == 1:
     /// Y.store(1);                   ||       assert!(X == 1);  
     /// ```
@@ -342,11 +342,6 @@ mod views {
 
 mod promises {
     //! # Promises — Store Hoisting
-    //!
-    //! **Promises** model store hoisting: a thread may speculatively write (promise)
-    //! a value before actually executing the store instruction.  The promise must
-    //! be *fulfillable* — when execution reaches the store, the thread must be able
-    //! to write the promised value; otherwise the execution is invalid.
     //!
     //! 线程可以承诺未来会写入某个值。
     //! 承诺必须能被兑现——在线程实际执行到写操作时，必须能够写入承诺的值，如果无法兑现，则该执行路径无效。

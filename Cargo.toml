@@ -9,3 +9,4 @@ check-loom = ["loom"]
 [dependencies]
 cfg-if = "1.0.4"
 loom = { version = "0.7.2", optional = true }
+rayon = "1.12.0"

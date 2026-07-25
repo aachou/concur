@@ -2,9 +2,9 @@
 
 > 使用 [Loom](https://github.com/tokio-rs/loom) 对 Relaxed Behaviors & Orderings 以及一些无锁数据结构进行测试。
 
-## Relaxed Behaviors & Orderings Test
+## 1. Relaxed Behaviors & Orderings Test
 
-### ① Multi-Valued Memory — Load Hoisting
+### 1.1 Multi-Valued Memory — Load Hoisting
 
 内存建模为 location → message list 的映射，线程可以读到旧值。
 
@@ -16,7 +16,7 @@ X = 1;   r1 = Y;     ||     Y = 1;   r2 = X;
 |------|------|------|
 | `load_hoisting` | Relaxed 下 load 可读到旧值 | 允许 `r1=r2=0` |
 
-### ② Message Adjacency — RMW Atomicity
+### 1.2 Message Adjacency — RMW Atomicity
 
 RMW 操作的新 message 必须邻接到被读 message 的右侧，防止 RMW 读到旧值。
 
@@ -25,7 +25,7 @@ RMW 操作的新 message 必须邻接到被读 message 的右侧，防止 RMW �
 | `message_adjacency_rmw_2_threads` | 双线程 `fetch_add(1)` | 不会同时读到 0 |
 | `message_adjacency_rmw_3_threads` | 三线程链式 RMW | 每线程读到唯一值，最终 X=3 |
 
-### ③ Views — Coherence & Synchronization
+### 1.3 Views — Coherence & Synchronization
 
 三种 View 约束线程行为：
 
@@ -43,7 +43,7 @@ RMW 操作的新 message 必须邻接到被读 message 的右侧，防止 RMW �
 | `sc_fence_sync` | Global View | 双 SC fence 保证同步 |
 | `relaxed_no_sync` | 对照 | 无同步时读旧值合法 |
 
-### ④ Promises — Store Hoisting
+### 1.4 Promises — Store Hoisting
 
 线程可承诺未来写入某个值，承诺必须能被兑现。
 
@@ -57,7 +57,7 @@ Store hoisting (`r1=X;Y=r1 || r2=Y;X=1 → r1=r2=1`) 在 C++11 内存模型下**
 | `store_hoisting_syntactic_dep_rw_coherence` | 语法依赖 + RW coherence | `r1=r2=1` 允许，`r3=0`（故不允许三者同时为 1） | 不支持 | 不允许 |
 
 
-## Run
+## 2. Run
 
 ```powershell
 cargo test          # 基本测试
