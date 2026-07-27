@@ -1,3 +1,5 @@
+pub mod lock;
+
 #[cfg(not(feature = "check-loom"))]
 pub use std::*;
 

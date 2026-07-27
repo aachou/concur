@@ -1,4 +1,4 @@
-# Relaxed Memory Concurrency
+<h1 align="center">Relaxed Memory Concurrency</h1>
 
 ## 1. Memory Model
 

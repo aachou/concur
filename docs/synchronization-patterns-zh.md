@@ -310,13 +310,13 @@ seq +!!!!!!+----------+!!!!!!!!+-------------+!!!!!!!!!+-----------+-------
 
 ## 模式 3：交错同步
 
-交错 fence（C/C++ 中的 `SeqCst` fence，以及 CPU 架构中最重量级的 fence）标记了需要被全序化的程序点。当线程 `th1` 在另一个线程 `th2` 执行另一个交错 fence 之前（按全序）执行了一个交错 fence 时，`th1` 在执行 fence 之前的视图应该被 `th2` 在执行 fence 之后确认。为了实现这一点，有前景的语义为交错 fence 维护了一个全局视图：
+交错 fence（C/C++ 中的 `SeqCst` fence，以及 CPU 架构中最重量级的 fence）标记了需要被全序化的程序点。当线程 `th1` 在另一个线程 `th2` 执行另一个交错 fence 之前（按全序）执行了一个交错 fence 时，`th1` 在执行 fence 之前的视图应该被 `th2` 在执行 fence 之后确认。为了实现这一点，promising semantics 为交错 fence 维护了一个全局视图：
 
 ```
 static mut interleaving_view: View // 在 Rust 中需要 `unsafe` 访问器，但..
 ```
 
-当一个线程执行交错 fence 时，它计算其视图和全局交错视图的（逐地址）最大值，并将该最大值同时设置为其自身视图和全局交错视图：
+当一个线程执行交错 fence 时，它计算其视图和全局交错视图的（每个地址）最大值，并将该最大值同时设置为其自身视图和全局交错视图：
 
 ```
 fn execute_interleaving_fence(&mut thread) {

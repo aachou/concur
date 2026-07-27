@@ -12,9 +12,9 @@ mod multi_valued_memory {
     //!
     //! 允许 `r1 = r2 = 0`
 
-    use relaxed_memory_concurrency::thread;
     use relaxed_memory_concurrency::sync::Arc;
     use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering};
+    use relaxed_memory_concurrency::thread;
 
     #[test]
     fn load_hoisting() {
@@ -66,9 +66,9 @@ mod message_adjacency {
     //!
     //! 不允许 `r1 = r2 = 0`。
 
-    use relaxed_memory_concurrency::thread;
     use relaxed_memory_concurrency::sync::Arc;
     use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering};
+    use relaxed_memory_concurrency::thread;
 
     #[test]
     fn message_adjacency_rmw_2_threads() {
@@ -119,9 +119,9 @@ mod views {
     //! | **Per-message view** | Release store 生成 message view；Acquire load 合并 message view | 实现 Release/Acquire 同步 |
     //! | **Global view** | fence(SC) 同步 thread view 与 global view | 实现 SC fence 跨线程同步 |
 
-    use relaxed_memory_concurrency::thread;
     use relaxed_memory_concurrency::sync::Arc;
     use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering, fence};
+    use relaxed_memory_concurrency::thread;
 
     // ═══════════════════════════════════════════════════════════════════════════════
     //  Per-thread View → Coherence
@@ -352,9 +352,9 @@ mod promises {
     //! | ③ 语法依赖 | `r1=X;Y=r1 \|\| r2=Y;if(r2==1){X=r2}else{X=1}` | 不允许 `r1=r2=1` |
     //! | ④ 语法依赖 + RW coherence | `r1=X;Y=r1 \|\| r2=Y;r3=X;if(r2==1){X=r2}else{X=1}` | 不允许 `r1=r2=r3=1` |
 
-    use relaxed_memory_concurrency::thread;
     use relaxed_memory_concurrency::sync::Arc;
     use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering};
+    use relaxed_memory_concurrency::thread;
 
     // ═══════════════════════════════════════════════════════════════════════════════
     //  场景 ①：Store hoisting 无依赖
