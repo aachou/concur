@@ -1,12 +1,12 @@
 # Relaxed Memory Concurrency
 
-> 使用 [Loom](https://github.com/tokio-rs/loom) 对 Relaxed Behaviors & Orderings 以及一些无锁数据结构进行测试。
+> 使用 [Loom](https://github.com/tokio-rs/loom) 对 Relaxed Behaviors & Orderings 以及一些无锁数据结构进行测试，还有一些并发编程的学习文档。
 
-## 1. Relaxed Behaviors & Orderings Test
+## 1. Relaxed Behaviors & Orderings 测试
 
 ### 1.1 Multi-Valued Memory — Load Hoisting
 
-内存建模为 location → message list 的映射，线程可以读到旧值。
+内存被表示为 location → message list 的映射，线程可以读到旧值。
 
 ```
 X = 1;   r1 = Y;     ||     Y = 1;   r2 = X;
@@ -23,7 +23,7 @@ RMW 操作的新 message 必须邻接到被读 message 的右侧，防止 RMW �
 | 测试 | 验证 | 预期 |
 |------|------|------|
 | `message_adjacency_rmw_2_threads` | 双线程 `fetch_add(1)` | 不会同时读到 0 |
-| `message_adjacency_rmw_3_threads` | 三线程链式 RMW | 每线程读到唯一值，最终 X=3 |
+| `message_adjacency_rmw_3_threads` | 三线程 `fetch_add(1)` | 每个线程读到唯一值，最终 X=3 |
 
 ### 1.3 Views — Coherence & Synchronization
 
@@ -35,10 +35,10 @@ RMW 操作的新 message 必须邻接到被读 message 的右侧，防止 RMW �
 
 | 测试 | 对应机制 | 验证 |
 |------|---------|------|
-| `rr_coherence` | RR | `r1=1 则 r2≠0` |
-| `rw_coherence` | RW | `r=0 在 X=1 之前` |
-| `wr_coherence` | WR | `X=1 后读 r=1` |
-| `ww_coherence` | WW | 最终 `X=2` |
+| `rr_coherence` | RR | `X=1;r1=X;r2=X` => 如果 `r1=1` 则 `r2!=0` |
+| `rw_coherence` | RW | `r=X;X=1` => `r=0` |
+| `wr_coherence` | WR | `X=1;r=X` => `r=1` |
+| `ww_coherence` | WW | `X=1;X=2` => 最终 `X=2` |
 | `release_acquire_sync` | Per-message View | Release/Acquire 保证消息传递 |
 | `sc_fence_sync` | Global View | 双 SC fence 保证同步 |
 | `relaxed_no_sync` | 对照 | 无同步时读旧值合法 |
@@ -47,17 +47,17 @@ RMW 操作的新 message 必须邻接到被读 message 的右侧，防止 RMW �
 
 线程可承诺未来写入某个值，承诺必须能被兑现。
 
-Store hoisting (`r1=X;Y=r1 || r2=Y;X=1 → r1=r2=1`) 在 C++11 内存模型下**允许**，但 Loom **不支持 store hoisting**。Promising Semantics 通过 promise 机制显式建模 store hoisting。
+Store hoisting (`r1=X;Y=r1 || r2=Y;X=1 → r1=r2=1`) 在 C++11 内存模型下允许。Loom 不支持 store hoisting。Promising Semantics 通过 promise 机制显式建模 store hoisting。
 
 | 测试 | 场景 | C++11 | Loom | PS |
 |------|------|-------|------|----|
 | `store_hoisting_wo_dep` | 无依赖 | 允许 | 不支持 | 允许 |
 | `store_hoisting_w_dep_oota` | 数据依赖 (OOTA) | 允许（已知缺陷） | 不支持 | 不允许 |
 | `store_hoisting_syntactic_dep` | 语法依赖 | 允许 | 不支持 | 允许 |
-| `store_hoisting_syntactic_dep_rw_coherence` | 语法依赖 + RW coherence | `r1=r2=1` 允许，`r3=0`（故不允许三者同时为 1） | 不支持 | 不允许 |
+| `store_hoisting_syntactic_dep_rw_coherence` | 语法依赖 + RW coherence | 不允许 | 不支持 | 不允许 |
 
 
-## 2. Run
+## 2. 运行
 
 ```powershell
 cargo test          # 基本测试
@@ -66,8 +66,23 @@ cargo loom-test     # 使用 loom 进行测试
 
 运行测试，Loom 会穷举所有线程交错和重排序，验证断言在所有调度下均成立。
 
-## Reference
+## 3. 推荐学习资料
+
+- [KAIST CS431: Concurrent Programming](https://github.com/kaist-cp/cs431)
+- [处理器编程的艺术](./docs/multiprocessor-programming-chp-01.md)
+- [线性一致性](./docs/herlihy-wing-linearizability-summary.md)
+- [分布式系统中的时间、时钟以及事件顺序](./docs/lamport-time-clocks-summary.md)
+- [宽松内存并发入门](./relaxed%20memory%20concurrency.md)
+- [关于共享内存一致性模型的教程](./docs/shared-memory-consistency-models-tutorial.md)
+- [宽松内存并发同步模式](./docs/synchronization-patterns-zh.md)
+- [crossbeam-epoch 内存序的使用](./docs/crossbeam-relaxed-memory-zh.md)
+- [无锁哈希表](./docs/lock-free-hash-tables.md)
+- [风险指针](./docs/hazard-pointers.md)
+- [基于行为导向的并发](./docs/boc.md)
+
+## 参考
 
 - [Promising Semantics](https://sf.snu.ac.kr/promise-concurrency/)
-- [Loom](https://github.com/tokio-rs/loom)
 - [KAIST CS431: Concurrent Programming](https://github.com/kaist-cp/cs431)
+- [Loom](https://github.com/tokio-rs/loom)
+- [多处理器编程的艺术](https://www.cmpedu.com/books/book/5605553.htm)

@@ -12,17 +12,16 @@ mod multi_valued_memory {
     //!
     //! 允许 `r1 = r2 = 0`
 
-    use relaxed_memory_concurrency::test::loom;
-    use relaxed_memory_concurrency::test::loom::sync::Arc;
-    use relaxed_memory_concurrency::test::loom::sync::atomic::{AtomicUsize, Ordering};
-    use relaxed_memory_concurrency::test::loom::thread;
+    use relaxed_memory_concurrency::thread;
+    use relaxed_memory_concurrency::sync::Arc;
+    use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn load_hoisting() {
         let reached = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let reached_ = reached.clone();
 
-        loom::model(move || {
+        relaxed_memory_concurrency::model(move || {
             let x = Arc::new(AtomicUsize::new(0));
             let y = Arc::new(AtomicUsize::new(0));
 
@@ -67,14 +66,13 @@ mod message_adjacency {
     //!
     //! 不允许 `r1 = r2 = 0`。
 
-    use relaxed_memory_concurrency::test::loom;
-    use relaxed_memory_concurrency::test::loom::sync::Arc;
-    use relaxed_memory_concurrency::test::loom::sync::atomic::{AtomicUsize, Ordering};
-    use relaxed_memory_concurrency::test::loom::thread;
+    use relaxed_memory_concurrency::thread;
+    use relaxed_memory_concurrency::sync::Arc;
+    use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn message_adjacency_rmw_2_threads() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
 
             let x_ = Arc::clone(&x);
@@ -91,7 +89,7 @@ mod message_adjacency {
 
     #[test]
     fn message_adjacency_rmw_3_threads() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
 
             let x_ = Arc::clone(&x);
@@ -121,10 +119,9 @@ mod views {
     //! | **Per-message view** | Release store 生成 message view；Acquire load 合并 message view | 实现 Release/Acquire 同步 |
     //! | **Global view** | fence(SC) 同步 thread view 与 global view | 实现 SC fence 跨线程同步 |
 
-    use relaxed_memory_concurrency::test::loom;
-    use relaxed_memory_concurrency::test::loom::sync::Arc;
-    use relaxed_memory_concurrency::test::loom::sync::atomic::{AtomicUsize, Ordering, fence};
-    use relaxed_memory_concurrency::test::loom::thread;
+    use relaxed_memory_concurrency::thread;
+    use relaxed_memory_concurrency::sync::Arc;
+    use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering, fence};
 
     // ═══════════════════════════════════════════════════════════════════════════════
     //  Per-thread View → Coherence
@@ -135,7 +132,7 @@ mod views {
     /// 对应文档：`X=1 || r1=X; r2=X [r1=1, r2=0 impossible]`
     #[test]
     fn rr_coherence() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
 
             let x_ = Arc::clone(&x);
@@ -162,7 +159,7 @@ mod views {
     /// 先读 X 得到 0（初始值），再写 X=1。读到的值不受后续写的影响。
     #[test]
     fn rw_coherence() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
 
             thread::spawn(move || {
@@ -179,7 +176,7 @@ mod views {
     /// 对应文档：`X=1; r=X [r=1]`
     #[test]
     fn wr_coherence() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
 
             thread::spawn(move || {
@@ -196,7 +193,7 @@ mod views {
     /// 对应文档：`X=1; X=2 [X=2 at the end]`
     #[test]
     fn ww_coherence() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
 
             let x_ = Arc::clone(&x);
@@ -227,7 +224,7 @@ mod views {
     /// 如果线程 2 看到 Y=1（Acquire），则此前线程 1 对 X=1 的写入也必然可见。
     #[test]
     fn release_acquire_sync() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
             let y = Arc::new(AtomicUsize::new(0));
 
@@ -267,7 +264,7 @@ mod views {
     /// 如果线程 2 看到 Y=1（relaxed），则此前线程 1 对 X=1 的写入也必然可见
     #[test]
     fn sc_fence_sync() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
             let y = Arc::new(AtomicUsize::new(0));
 
@@ -308,7 +305,7 @@ mod views {
         let reached = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let reached_ = reached.clone();
 
-        loom::model(move || {
+        relaxed_memory_concurrency::model(move || {
             let x = Arc::new(AtomicUsize::new(0));
             let y = Arc::new(AtomicUsize::new(0));
 
@@ -355,10 +352,9 @@ mod promises {
     //! | ③ 语法依赖 | `r1=X;Y=r1 \|\| r2=Y;if(r2==1){X=r2}else{X=1}` | 不允许 `r1=r2=1` |
     //! | ④ 语法依赖 + RW coherence | `r1=X;Y=r1 \|\| r2=Y;r3=X;if(r2==1){X=r2}else{X=1}` | 不允许 `r1=r2=r3=1` |
 
-    use relaxed_memory_concurrency::test::loom;
-    use relaxed_memory_concurrency::test::loom::sync::Arc;
-    use relaxed_memory_concurrency::test::loom::sync::atomic::{AtomicUsize, Ordering};
-    use relaxed_memory_concurrency::test::loom::thread;
+    use relaxed_memory_concurrency::thread;
+    use relaxed_memory_concurrency::sync::Arc;
+    use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering};
 
     // ═══════════════════════════════════════════════════════════════════════════════
     //  场景 ①：Store hoisting 无依赖
@@ -382,7 +378,7 @@ mod promises {
         let reached = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let reached_ = reached.clone();
 
-        loom::model(move || {
+        relaxed_memory_concurrency::model(move || {
             let x = Arc::new(AtomicUsize::new(0));
             let y = Arc::new(AtomicUsize::new(0));
             let r1 = Arc::new(AtomicUsize::new(0));
@@ -431,7 +427,7 @@ mod promises {
     /// **Loom** 不支持 store hoisting——不允许 `r1=r2=1`。
     #[test]
     fn store_hoisting_w_dep_oota() {
-        loom::model(|| {
+        relaxed_memory_concurrency::model(|| {
             let x = Arc::new(AtomicUsize::new(0));
             let y = Arc::new(AtomicUsize::new(0));
             let r1 = Arc::new(AtomicUsize::new(0));
@@ -479,7 +475,7 @@ mod promises {
         let reached = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let reached_ = reached.clone();
 
-        loom::model(move || {
+        relaxed_memory_concurrency::model(move || {
             let x = Arc::new(AtomicUsize::new(0));
             let y = Arc::new(AtomicUsize::new(0));
             let r1 = Arc::new(AtomicUsize::new(0));
@@ -536,7 +532,7 @@ mod promises {
     /// Loom 不支持 store hoisting——不允许 `r1=r2=r3=1`。。
     #[test]
     fn store_hoisting_syntactic_dep_rw_coherence() {
-        loom::model(move || {
+        relaxed_memory_concurrency::model(move || {
             let x = Arc::new(AtomicUsize::new(0));
             let y = Arc::new(AtomicUsize::new(0));
             let r1 = Arc::new(AtomicUsize::new(0));
