@@ -78,7 +78,7 @@ cargo loom-test     # 使用 loom 进行测试
 ## 4. 推荐学习资料
 
 - [KAIST CS431: Concurrent Programming](https://github.com/kaist-cp/cs431)
-- [处理器编程的艺术](./docs/multiprocessor-programming-chp-01.md)
+- [多处理器编程的艺术](./docs/multiprocessor-programming-chp-01.md)
 - [线性一致性](./docs/herlihy-wing-linearizability-summary.md)
 - [分布式系统中的时间、时钟以及事件顺序](./docs/lamport-time-clocks-summary.md)
 - [宽松内存并发入门](./relaxed%20memory%20concurrency.md)

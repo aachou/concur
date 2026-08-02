@@ -19,6 +19,7 @@
 
 *  **一致性** (consistent)：所有的线程对同一个值做出决策。
 * **有效性** (valid)：这个共同确定的决策值是某个线程的输入。
+* **终止性** (Termination)：所有没有崩溃的正确线程，最终都会决定一个值。
 
 ```java
 public interface Consensus<T> {
@@ -262,6 +263,8 @@ public class MuitiConsensus<T> extends ConsensusProtocol<T> {
 
 ![fig10](../static/images/multiprocessor-programming-chp-05/fig10.png)
 
+> *简单来说，通过比较字段 r~i~ 、r~j~ 和 r~ij~ 的值，可以确定任意两个线程之前的赋值次序，从而可以推导出所有线程赋值次序的全序关系，第一个赋值的线程  X 是赢家，而所有人都能确定这个赢家，从而确定决策值 r~x~。*
+
 ## 6. 读取 - 修改 - 写入操作
 
 大多数多处理器硬件提供的同步操作通常可以表示为**读取 - 修改 - 写入**（read-modify-write，简称 RMW）操作，或者按照其对象术语，称为“读取 - 修改 - 写入”寄存器。下面讨论一个封装了整数值的 RMW 寄存器，令 F 是一组从整数到整数的映射函数（有时 F 是一个单例集）。
@@ -292,7 +295,7 @@ class RMWConsensus extends ConsensusProtocol {
         propose(value);
         int i = ThreadID.get();	// 该线程的索引
         int j = 1 - i;			// 其他线程的索引
-        if (r.rmw() == V)		// 线程是第一个，获胜
+        if (r.rmw() == v)		// 线程是第一个，获胜
             return proposed[i];	
         else					// 线程是第二个，出局
             return proposed[j];
