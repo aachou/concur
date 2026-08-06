@@ -4,6 +4,7 @@
 
 - `cargo test` — run all tests with standard Rust concurrency
 - `cargo loom-test` — run tests under Loom exhaustive model checking (alias: `cargo test --features check-loom --release`, defined in `.cargo/config.toml`)
+- Python (if needed) — installed via `uv`; run scripts with `uv run python`
 
 ## Loom gating
 
