@@ -1,8 +1,7 @@
 use crate::cell::UnsafeCell;
 use crate::sync::Mutex;
-use crate::sync::atomic::{Ordering, fence};
 
-use super::api::{Consensus, ConsensusProtocol};
+use super::api::{Consensus, ConsensusProtocol, cell_read, cell_write};
 
 struct Queue<T> {
     inner: Mutex<Vec<T>>,
@@ -22,17 +21,19 @@ impl<T> Queue<T> {
     }
 }
 
+unsafe impl<T: Send> Send for Queue<T> {}
+unsafe impl<T: Send> Sync for Queue<T> {}
+
 pub struct QueueConsensus<T> {
     proposed: [UnsafeCell<Option<T>>; 2],
     queue: Queue<usize>,
-    n: usize,
 }
 
 const WIN: usize = 0;
 const LOSE: usize = 1;
 
-impl<T: Clone> Consensus<T> for QueueConsensus<T> {
-    fn new(n: usize) -> Self {
+impl<T> QueueConsensus<T> {
+    pub fn new(n: usize) -> Self {
         assert!(n <= 2);
 
         let queue = Queue::new();
@@ -42,48 +43,33 @@ impl<T: Clone> Consensus<T> for QueueConsensus<T> {
         Self {
             proposed: [UnsafeCell::new(None), UnsafeCell::new(None)],
             queue,
-            n,
         }
     }
+}
 
+impl<T> Default for QueueConsensus<T> {
+    fn default() -> Self {
+        Self::new(2)
+    }
+}
+
+impl<T: Clone> Consensus<T> for QueueConsensus<T> {
     fn decide(&self, value: T, id: usize) -> T {
-        assert!(id < self.n);
+        assert!(id < self.proposed.len());
 
         self.propose(value, id);
 
-        fence(Ordering::SeqCst);
-
-        #[cfg(not(feature = "check-loom"))]
-        unsafe {
-            if self.queue.deq() == WIN {
-                (*self.proposed[id].get()).clone().unwrap()
-            } else {
-                (*self.proposed[1 - id].get()).clone().unwrap()
-            }
-        }
-
-        #[cfg(feature = "check-loom")]
-        unsafe {
-            if self.queue.deq() == WIN {
-                (*self.proposed[id].get().deref()).clone().unwrap()
-            } else {
-                (*self.proposed[1 - id].get().deref()).clone().unwrap()
-            }
+        if self.queue.deq() == WIN {
+            cell_read(&self.proposed[id]).unwrap()
+        } else {
+            cell_read(&self.proposed[1 - id]).unwrap()
         }
     }
 }
 
 impl<T: Clone> ConsensusProtocol<T> for QueueConsensus<T> {
     fn propose(&self, value: T, id: usize) {
-        #[cfg(not(feature = "check-loom"))]
-        unsafe {
-            *self.proposed[id].get() = Some(value);
-        }
-
-        #[cfg(feature = "check-loom")]
-        unsafe {
-            *self.proposed[id].get_mut().deref() = Some(value);
-        }
+        cell_write(&self.proposed[id], Some(value));
     }
 }
 

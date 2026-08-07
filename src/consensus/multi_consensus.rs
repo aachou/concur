@@ -1,8 +1,7 @@
 use crate::cell::UnsafeCell;
-use crate::sync::atomic::{Ordering, fence};
 use crate::sync::{Mutex, MutexGuard};
 
-use super::api::{Consensus, ConsensusProtocol};
+use super::api::{Consensus, ConsensusProtocol, cell_read, cell_write};
 
 struct Assign {
     inner: Mutex<Vec<i32>>,
@@ -46,11 +45,10 @@ impl Assign {
 pub struct MultiConsensus<T> {
     proposed: Vec<UnsafeCell<Option<T>>>,
     assign: Assign,
-    n: usize,
 }
 
-impl<T: Clone> Consensus<T> for MultiConsensus<T> {
-    fn new(n: usize) -> Self {
+impl<T> MultiConsensus<T> {
+    pub fn new(n: usize) -> Self {
         let mut proposed = Vec::with_capacity(n);
         for _ in 0..n {
             proposed.push(UnsafeCell::new(None));
@@ -58,22 +56,28 @@ impl<T: Clone> Consensus<T> for MultiConsensus<T> {
         Self {
             proposed,
             assign: Assign::new(n),
-            n,
         }
     }
+}
+
+impl<T> Default for MultiConsensus<T> {
+    fn default() -> Self {
+        Self::new(2)
+    }
+}
+
+impl<T: Clone> Consensus<T> for MultiConsensus<T> {
     fn decide(&self, value: T, id: usize) -> T {
-        assert!(id < self.n);
+        assert!(id < self.proposed.len());
 
         self.propose(value, id);
-
-        fence(Ordering::SeqCst);
 
         self.assign.assign(id, id as i32);
 
         let guard = self.assign.read();
 
         let mut win = 0;
-        for j in 1..self.n {
+        for j in 1..self.proposed.len() {
             if guard[j] == NULL {
                 continue;
             }
@@ -82,29 +86,13 @@ impl<T: Clone> Consensus<T> for MultiConsensus<T> {
             }
         }
 
-        #[cfg(not(feature = "check-loom"))]
-        unsafe {
-            (*self.proposed[win].get()).clone().unwrap()
-        }
-
-        #[cfg(feature = "check-loom")]
-        unsafe {
-            (*self.proposed[win].get().deref()).clone().unwrap()
-        }
+        cell_read(&self.proposed[win]).unwrap()
     }
 }
 
 impl<T: Clone> ConsensusProtocol<T> for MultiConsensus<T> {
     fn propose(&self, value: T, id: usize) {
-        #[cfg(not(feature = "check-loom"))]
-        unsafe {
-            *self.proposed[id].get() = Some(value);
-        }
-
-        #[cfg(feature = "check-loom")]
-        unsafe {
-            *self.proposed[id].get_mut().deref() = Some(value);
-        }
+        cell_write(&self.proposed[id], Some(value));
     }
 }
 
