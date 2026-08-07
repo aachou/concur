@@ -1,3 +1,4 @@
+pub mod consensus;
 pub mod lock;
 
 #[cfg(not(feature = "check-loom"))]

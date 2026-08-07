@@ -120,7 +120,7 @@ public abstract class ConsensusProtocol<T> implements Consensus<T> {
 
 ## 4. FIFO 队列
 
-在第 3 章中，我们讨论了一种仅使用原子寄存器来实现一个无等待的 FIFO 先人先出队列的方法，但该实现仅限于一个线程入队和一个线程出队的情况。很自然读者就会提出疑问，是否可以构造一个支持多个入队线程和多个出队线程的 FIFO 队列的无等待实现呢？现在让我们讨论一个更具体的问题：是否可以使用原子寄存器构造一个双出队线程的 FIFO 队列的无等待实现？
+在第 3 章中，我们讨论了一种仅使用原子寄存器来实现一个无等待的 FIFO 先入先出队列的方法，但该实现仅限于一个线程入队和一个线程出队的情况。很自然读者就会提出疑问，是否可以构造一个支持多个入队线程和多个出队线程的 FIFO 队列的无等待实现呢？现在让我们讨论一个更具体的问题：是否可以使用原子寄存器构造一个双出队线程的 FIFO 队列的无等待实现？
 
 **引理 5.4.1**  双出队线程的 FIFO 队列类的共识数至少为 2。
 
@@ -208,7 +208,7 @@ public class Assign23 {
             r[i] = init;
         }
     }
-    public synchronized void assign(int v1, int v1, int i0, int i1) {
+    public synchronized void assign(int v0, int v1, int i0, int i1) {
         r[i0] = v0;
         r[i1] = v1;
     }
@@ -233,7 +233,7 @@ public class Assign23 {
 同样的分析也适用于线程 B。证毕。
 
 ```java
-public class MuitiConsensus<T> extends ConsensusProtocol<T> {
+public class MultiConsensus<T> extends ConsensusProtocol<T> {
     private final int NULL = -1;
     Assign23 assign23 = new Assign23(NULL);
     public T decide(T value) {
