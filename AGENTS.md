@@ -14,7 +14,7 @@ Tests import from `relaxed_memory_concurrency::{thread, sync::Arc, sync::atomic:
 
 ## Test layout
 
-All integration tests live in `tests/promise_semantics.rs` with 4 modules: `multi_valued_memory`, `message_adjacency`, `views`, `promises`. The `promises` module tests store hoisting scenarios.
+Integration tests live in `tests/promise_semantics.rs` (4 modules: `multi_valued_memory`, `message_adjacency`, `views`, `promises`; the `promises` module tests store hoisting scenarios), plus `tests/lock.rs` and `tests/consensus.rs`. The consensus tests have a `basic` module (std-only, 20 threads) and a `correctness` module (std + Loom, n=2 via `C::default()`).
 
 ## Store hoisting tests
 

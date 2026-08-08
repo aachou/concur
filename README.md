@@ -56,7 +56,6 @@ Store hoisting (`r1=X;Y=r1 || r2=Y;X=1 → r1=r2=1`) 在 C++11 内存模型下�
 | `store_hoisting_syntactic_dep` | 语法依赖 | 允许 | 不支持 | 允许 |
 | `store_hoisting_syntactic_dep_rw_coherence` | 语法依赖 + RW coherence | 不允许 | 不支持 | 不允许 |
 
-
 ## 2. 经典自旋锁实现
 
 | Lock | 算法 | 最大线程数 | 同步模式 |
@@ -65,8 +64,16 @@ Store hoisting (`r1=X;Y=r1 || r2=Y;X=1 → r1=r2=1`) 在 C++11 内存模型下�
 | `FilterLock` | Peterson 推广（N-1 层过滤） | N | SC fence + Release/Acquire |
 | `BakeryLock` | Bakery 算法（取号排队） | N | SC fence + Release/Acquire |
 
+## 3. Consensus 实现
 
-## 3. 运行
+| 共识对象 | 算法 | 最大线程数 | 同步模式 |
+|---------|------|-----------|---------|
+| `QueueConsensus` | FIFO 队列（先出队者获胜） | 2 | Mutex lock |
+| `Common2Consensus` | common2（先执行 common2 RMW 者获胜） | 2 | Release/Acquire |
+| `MultiConsensus` | 多重赋值（打锦标赛，最先赋值者获胜） | N | Mutex lock |
+| `CasConsensus` | compare & swap（执行 cas 成功者获胜） | ∞ | Release/Acquire |
+
+## 4. 运行
 
 ```powershell
 cargo test          # 基本测试
@@ -75,7 +82,7 @@ cargo loom-test     # 使用 loom 进行测试
 
 运行测试，Loom 会穷举所有线程交错和重排序，验证断言在所有调度下均成立。
 
-## 4. 推荐学习资料
+## 5. 推荐学习资料
 
 - [KAIST CS431: Concurrent Programming](https://github.com/kaist-cp/cs431)
 - [多处理器编程的艺术](./docs/multiprocessor-programming-chp-01.md)
@@ -89,7 +96,7 @@ cargo loom-test     # 使用 loom 进行测试
 - [风险指针](./docs/hazard-pointers.md)
 - [基于行为导向的并发](./docs/boc.md)
 
-## 5. 参考
+## 6. 参考
 
 - [Promising Semantics](https://sf.snu.ac.kr/promise-concurrency/)
 - [KAIST CS431: Concurrent Programming](https://github.com/kaist-cp/cs431)

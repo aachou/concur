@@ -342,7 +342,7 @@ class CASConsensus extends ConsensusProtoco {
     public Object decide(Object value) {
         propose(value);
         int i = ThreadID.get();
-        if (r.compareAndSet(FIRST, i)) // 该线程胜出
+        if (r.compareAndSet(FIRST, i))  // 该线程胜出
             return proposed[i];
         else							// 该线程出局
             return proposed[j];

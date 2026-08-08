@@ -27,6 +27,7 @@ unsafe impl<T: Send> Sync for Queue<T> {}
 pub struct QueueConsensus<T> {
     proposed: [UnsafeCell<Option<T>>; 2],
     queue: Queue<usize>,
+    n: usize,
 }
 
 const WIN: usize = 0;
@@ -43,6 +44,7 @@ impl<T> QueueConsensus<T> {
         Self {
             proposed: [UnsafeCell::new(None), UnsafeCell::new(None)],
             queue,
+            n,
         }
     }
 }
@@ -55,7 +57,7 @@ impl<T> Default for QueueConsensus<T> {
 
 impl<T: Clone> Consensus<T> for QueueConsensus<T> {
     fn decide(&self, value: T, id: usize) -> T {
-        assert!(id < self.proposed.len());
+        assert!(id < self.n);
 
         self.propose(value, id);
 

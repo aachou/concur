@@ -1,6 +1,6 @@
 #[cfg(not(feature = "check-loom"))]
 mod basic {
-    use relaxed_memory_concurrency::consensus::{Consensus, MultiConsensus};
+    use relaxed_memory_concurrency::consensus::{CasConsensus, Consensus, MultiConsensus};
     use relaxed_memory_concurrency::thread;
 
     fn test_consensus<C: Consensus<usize> + Sync>(c: C) {
@@ -20,10 +20,17 @@ mod basic {
     fn multi_consensus() {
         test_consensus(MultiConsensus::new(20));
     }
+
+    #[test]
+    fn cas_consensus() {
+        test_consensus(CasConsensus::new(20));
+    }
 }
 
 mod correctness {
-    use relaxed_memory_concurrency::consensus::{Consensus, MultiConsensus, QueueConsensus};
+    use relaxed_memory_concurrency::consensus::{
+        CasConsensus, Common2Consensus, Consensus, MultiConsensus, QueueConsensus,
+    };
     use relaxed_memory_concurrency::sync::Arc;
     use relaxed_memory_concurrency::thread;
 
@@ -49,5 +56,15 @@ mod correctness {
     #[test]
     fn multi_consensus() {
         test_consensus::<MultiConsensus<usize>>();
+    }
+
+    #[test]
+    fn common2_consensus() {
+        test_consensus::<Common2Consensus<usize>>();
+    }
+
+    #[test]
+    fn cas_consensus() {
+        test_consensus::<CasConsensus<usize>>();
     }
 }

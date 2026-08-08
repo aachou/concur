@@ -49,12 +49,8 @@ pub struct MultiConsensus<T> {
 
 impl<T> MultiConsensus<T> {
     pub fn new(n: usize) -> Self {
-        let mut proposed = Vec::with_capacity(n);
-        for _ in 0..n {
-            proposed.push(UnsafeCell::new(None));
-        }
         Self {
-            proposed,
+            proposed: (0..n).map(|_| UnsafeCell::new(None)).collect(),
             assign: Assign::new(n),
         }
     }
