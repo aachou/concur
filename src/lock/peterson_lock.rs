@@ -1,18 +1,27 @@
 use crate::hint::spin_loop;
 use crate::sync::atomic::{AtomicBool, AtomicUsize, Ordering, fence};
 
-#[derive(Debug, Default)]
+use super::api::BoundedRawLock;
+
 pub struct PetersonLock {
     flag: [AtomicBool; 2],
     victim: AtomicUsize,
+    n: usize,
 }
 
-impl PetersonLock {
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl BoundedRawLock for PetersonLock {
+    fn new(n: usize) -> Self {
+        assert!(n <= 2);
 
-    pub fn lock(&self, id: usize) {
+        Self {
+            flag: [AtomicBool::new(false), AtomicBool::new(false)],
+            victim: AtomicUsize::new(0),
+            n,
+        }
+    }
+    fn lock(&self, id: usize) {
+        assert!(id < self.n);
+
         self.flag[id].store(true, Ordering::Relaxed);
         fence(Ordering::SeqCst);
         self.victim.store(id, Ordering::Relaxed);
@@ -22,8 +31,7 @@ impl PetersonLock {
             spin_loop();
         }
     }
-
-    pub fn unlock(&self, id: usize) {
+    unsafe fn unlock(&self, id: usize) {
         self.flag[id].store(false, Ordering::Release);
     }
 }

@@ -1,105 +1,85 @@
 #[cfg(not(feature = "check-loom"))]
 mod basic {
-    use relaxed_memory_concurrency::lock::{BakeryLock, FilterLock, PetersonLock};
-    use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering};
+    use relaxed_memory_concurrency::lock::{
+        BakeryLock, BoundedLock, BoundedRawLock, FilterLock, PetersonLock,
+    };
     use relaxed_memory_concurrency::thread;
+
+    fn test_lock<L: BoundedRawLock>() {
+        let lock = BoundedLock::<L, usize>::new(20, 0);
+
+        thread::scope(|s| {
+            let lock = &lock;
+
+            (0..20).for_each(|id| {
+                s.spawn(move || {
+                    (0..500).for_each(|_| {
+                        *lock.lock(id) += 1;
+                    });
+                });
+            });
+        });
+
+        assert_eq!(*lock.lock(0), 10000);
+    }
 
     #[test]
     fn peterson_lock() {
-        let peterson = PetersonLock::new();
-        let data = AtomicUsize::new(0);
+        let lock = BoundedLock::<PetersonLock, usize>::new(2, 0);
 
         thread::scope(|s| {
-            let p = &peterson;
-            let d = &data;
+            let lock = &lock;
 
-            for id in 0..2 {
+            (0..2).for_each(|id| {
                 s.spawn(move || {
-                    for _ in 0..500 {
-                        p.lock(id);
-                        d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                        p.unlock(id);
-                    }
+                    (0..500).for_each(|_| {
+                        *lock.lock(id) += 1;
+                    });
                 });
-            }
+            });
         });
 
-        assert_eq!(data.load(Ordering::Relaxed), 1000);
+        assert_eq!(*lock.lock(0), 1000);
     }
 
     #[test]
     fn filter_lock() {
-        let filter = FilterLock::new(20);
-        let data = AtomicUsize::new(0);
-
-        thread::scope(|s| {
-            let f = &filter;
-            let d = &data;
-
-            for id in 0..20 {
-                s.spawn(move || {
-                    for _ in 0..500 {
-                        f.lock(id);
-                        d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                        f.unlock(id);
-                    }
-                });
-            }
-        });
-
-        assert_eq!(data.load(Ordering::Relaxed), 10000);
+        test_lock::<FilterLock>();
     }
 
     #[test]
     fn bakery_lock() {
-        let bakery = BakeryLock::new(20);
-        let data = AtomicUsize::new(0);
-
-        thread::scope(|s| {
-            let b = &bakery;
-            let d = &data;
-
-            for id in 0..20 {
-                s.spawn(move || {
-                    for _ in 0..500 {
-                        b.lock(id);
-                        d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                        b.unlock(id);
-                    }
-                });
-            }
-        });
-
-        assert_eq!(data.load(Ordering::Relaxed), 10000);
+        test_lock::<BakeryLock>();
     }
 }
 
 mod correctness {
-    use relaxed_memory_concurrency::lock::{BakeryLock, FilterLock, PetersonLock};
+    use relaxed_memory_concurrency::lock::{BakeryLock, BoundedRawLock, FilterLock, PetersonLock};
     use relaxed_memory_concurrency::sync::Arc;
     use relaxed_memory_concurrency::sync::atomic::{AtomicUsize, Ordering};
     use relaxed_memory_concurrency::thread;
 
-    #[test]
-    fn peterson_lock() {
+    fn test_lock<L: BoundedRawLock + 'static>() {
         relaxed_memory_concurrency::model(|| {
-            let peterson = Arc::new(PetersonLock::new());
+            let lock = Arc::new(L::new(2));
             let data = Arc::new(AtomicUsize::new(0));
 
-            let p = Arc::clone(&peterson);
-            let d = Arc::clone(&data);
+            let (lock_, data_) = (Arc::clone(&lock), Arc::clone(&data));
             let t1 = thread::spawn(move || {
-                p.lock(0);
-                d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                p.unlock(0);
+                lock_.lock(0);
+                data_.store(data_.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
+                unsafe {
+                    lock_.unlock(0);
+                }
             });
 
-            let p = Arc::clone(&peterson);
-            let d = Arc::clone(&data);
+            let (lock_, data_) = (Arc::clone(&lock), Arc::clone(&data));
             let t2 = thread::spawn(move || {
-                p.lock(1);
-                d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                p.unlock(1);
+                lock_.lock(1);
+                data_.store(data_.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
+                unsafe {
+                    lock_.unlock(1);
+                }
             });
 
             t1.join().unwrap();
@@ -107,63 +87,20 @@ mod correctness {
 
             assert_eq!(data.load(Ordering::Relaxed), 2);
         });
+    }
+
+    #[test]
+    fn peterson_lock() {
+        test_lock::<PetersonLock>();
     }
 
     #[test]
     fn filter_lock() {
-        relaxed_memory_concurrency::model(|| {
-            let filter = Arc::new(FilterLock::new(2));
-            let data = Arc::new(AtomicUsize::new(0));
-
-            let f = Arc::clone(&filter);
-            let d = Arc::clone(&data);
-            let t1 = thread::spawn(move || {
-                f.lock(0);
-                d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                f.unlock(0);
-            });
-
-            let f = Arc::clone(&filter);
-            let d = Arc::clone(&data);
-            let t2 = thread::spawn(move || {
-                f.lock(1);
-                d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                f.unlock(1);
-            });
-
-            t1.join().unwrap();
-            t2.join().unwrap();
-
-            assert_eq!(data.load(Ordering::Relaxed), 2);
-        });
+        test_lock::<FilterLock>();
     }
 
     #[test]
     fn bakery_lock() {
-        relaxed_memory_concurrency::model(|| {
-            let bakery = Arc::new(BakeryLock::new(2));
-            let data = Arc::new(AtomicUsize::new(0));
-
-            let b = Arc::clone(&bakery);
-            let d = Arc::clone(&data);
-            let t1 = thread::spawn(move || {
-                b.lock(0);
-                d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                b.unlock(0);
-            });
-
-            let b = Arc::clone(&bakery);
-            let d = Arc::clone(&data);
-            let t2 = thread::spawn(move || {
-                b.lock(1);
-                d.store(d.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
-                b.unlock(1);
-            });
-
-            t1.join().unwrap();
-            t2.join().unwrap();
-
-            assert_eq!(data.load(Ordering::Relaxed), 2);
-        });
+        test_lock::<BakeryLock>();
     }
 }

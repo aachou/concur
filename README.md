@@ -1,6 +1,6 @@
 # Relaxed Memory Concurrency
 
-> 使用 [Loom](https://github.com/tokio-rs/loom) 对 Relaxed Behaviors & Orderings 以及一些无锁数据结构进行测试，还有一些并发编程的学习文档。
+> 使用 [Loom](https://github.com/tokio-rs/loom) 对 Relaxed Behaviors & Orderings 以及一些并发数据结构进行测试，还有一些并发编程的学习文档。
 
 ## 1. Relaxed Behaviors & Orderings 测试
 

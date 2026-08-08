@@ -1,25 +1,26 @@
 use crate::hint::spin_loop;
 use crate::sync::atomic::{AtomicBool, AtomicUsize, Ordering, fence};
 
-#[derive(Debug, Default)]
+use super::api::BoundedRawLock;
+
 pub struct BakeryLock {
     flag: Vec<AtomicBool>,
     label: Vec<AtomicUsize>,
     n: usize,
 }
 
-impl BakeryLock {
-    pub fn new(n: usize) -> Self {
-        let mut flag = Vec::with_capacity(n);
-        let mut label = Vec::with_capacity(n);
-        for _ in 0..n {
-            flag.push(AtomicBool::new(false));
-            label.push(AtomicUsize::new(0));
+impl BoundedRawLock for BakeryLock {
+    fn new(n: usize) -> Self {
+        Self {
+            flag: (0..n).map(|_| AtomicBool::new(false)).collect(),
+            label: (0..n).map(|_| AtomicUsize::new(0)).collect(),
+            n,
         }
-        Self { flag, label, n }
     }
 
-    pub fn lock(&self, id: usize) {
+    fn lock(&self, id: usize) {
+        assert!(id < self.n);
+
         self.flag[id].store(true, Ordering::Relaxed);
         fence(Ordering::SeqCst);
         self.label[id].store(
@@ -42,7 +43,7 @@ impl BakeryLock {
         }
     }
 
-    pub fn unlock(&self, id: usize) {
+    unsafe fn unlock(&self, id: usize) {
         self.flag[id].store(false, Ordering::Release);
     }
 }
