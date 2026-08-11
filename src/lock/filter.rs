@@ -17,7 +17,7 @@ impl BoundedRawLock for FilterLock {
             n,
         }
     }
-    fn lock(&self, id: usize) {
+    unsafe fn lock(&self, id: usize) {
         assert!(id < self.n);
 
         for i in 1..self.n {

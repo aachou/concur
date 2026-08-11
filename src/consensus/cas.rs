@@ -1,7 +1,8 @@
 use crate::cell::UnsafeCell;
 use crate::sync::atomic::{AtomicUsize, Ordering};
+use crate::{cell_read, cell_write};
 
-use super::api::{Consensus, ConsensusProtocol, cell_read, cell_write};
+use super::api::{Consensus, ConsensusProtocol};
 
 pub struct CasConsensus<T> {
     proposed: Vec<UnsafeCell<Option<T>>>,
@@ -25,8 +26,8 @@ impl<T> Default for CasConsensus<T> {
     }
 }
 
-impl<T: Clone> Consensus<T> for CasConsensus<T> {
-    fn decide(&self, value: T, id: usize) -> T {
+impl<T> Consensus<T> for CasConsensus<T> {
+    unsafe fn decide(&self, value: T, id: usize) -> &T {
         assert!(id < self.proposed.len());
 
         self.propose(value, id);
@@ -36,14 +37,16 @@ impl<T: Clone> Consensus<T> for CasConsensus<T> {
             .compare_exchange(FIRST, id, Ordering::AcqRel, Ordering::Relaxed)
             .is_ok()
         {
-            cell_read(&self.proposed[id]).unwrap()
+            cell_read(&self.proposed[id]).as_ref().unwrap()
         } else {
-            cell_read(&self.proposed[self.cas.load(Ordering::Acquire)]).unwrap()
+            cell_read(&self.proposed[self.cas.load(Ordering::Acquire)])
+                .as_ref()
+                .unwrap()
         }
     }
 }
 
-impl<T: Clone> ConsensusProtocol<T> for CasConsensus<T> {
+impl<T> ConsensusProtocol<T> for CasConsensus<T> {
     fn propose(&self, value: T, id: usize) {
         cell_write(&self.proposed[id], Some(value));
     }

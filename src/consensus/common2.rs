@@ -1,7 +1,8 @@
 use crate::cell::UnsafeCell;
 use crate::sync::atomic::{AtomicUsize, Ordering};
+use crate::{cell_read, cell_write};
 
-use super::api::{Consensus, ConsensusProtocol, cell_read, cell_write};
+use super::api::{Consensus, ConsensusProtocol};
 
 pub struct Common2Consensus<T> {
     proposed: [UnsafeCell<Option<T>>; 2],
@@ -29,21 +30,21 @@ impl<T> Default for Common2Consensus<T> {
     }
 }
 
-impl<T: Clone> Consensus<T> for Common2Consensus<T> {
-    fn decide(&self, value: T, id: usize) -> T {
+impl<T> Consensus<T> for Common2Consensus<T> {
+    unsafe fn decide(&self, value: T, id: usize) -> &T {
         assert!(id < self.n);
 
         self.propose(value, id);
 
         if self.common2.fetch_add(1, Ordering::AcqRel) == FIRST {
-            cell_read(&self.proposed[id]).unwrap()
+            cell_read(&self.proposed[id]).as_ref().unwrap()
         } else {
-            cell_read(&self.proposed[1 - id]).unwrap()
+            cell_read(&self.proposed[1 - id]).as_ref().unwrap()
         }
     }
 }
 
-impl<T: Clone> ConsensusProtocol<T> for Common2Consensus<T> {
+impl<T> ConsensusProtocol<T> for Common2Consensus<T> {
     fn propose(&self, value: T, id: usize) {
         cell_write(&self.proposed[id], Some(value));
     }

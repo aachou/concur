@@ -7,7 +7,7 @@ mod basic {
         let succ = thread::scope(|s| {
             let c = &c;
             let proposes = (0..20)
-                .map(|id| s.spawn(move || c.decide(id, id)))
+                .map(|id| s.spawn(move || unsafe { *c.decide(id, id) }))
                 .map(|handle| handle.join().unwrap())
                 .collect::<Vec<usize>>();
             proposes.iter().all(|&p| p == proposes[0])
@@ -39,10 +39,10 @@ mod correctness {
             let c = Arc::new(C::default());
 
             let c_ = Arc::clone(&c);
-            let t1 = thread::spawn(move || c_.decide(0, 0));
+            let t1 = thread::spawn(move || unsafe { *c_.decide(0, 0) });
 
             let c_ = Arc::clone(&c);
-            let t2 = thread::spawn(move || c_.decide(1, 1));
+            let t2 = thread::spawn(move || unsafe { *c_.decide(1, 1) });
 
             assert_eq!(t1.join().unwrap(), t2.join().unwrap());
         })

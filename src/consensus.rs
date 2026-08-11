@@ -1,11 +1,11 @@
 pub mod api;
-pub mod cas_consensus;
-pub mod common2_consensus;
-pub mod multi_consensus;
-pub mod queue_consensus;
+pub mod cas;
+pub mod common2;
+pub mod multi;
+pub mod queue;
 
 pub use api::*;
-pub use cas_consensus::*;
-pub use common2_consensus::*;
-pub use multi_consensus::*;
-pub use queue_consensus::*;
+pub use cas::*;
+pub use common2::*;
+pub use multi::*;
+pub use queue::*;

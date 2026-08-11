@@ -1,7 +1,8 @@
 use crate::cell::UnsafeCell;
 use crate::sync::Mutex;
+use crate::{cell_read, cell_write};
 
-use super::api::{Consensus, ConsensusProtocol, cell_read, cell_write};
+use super::api::{Consensus, ConsensusProtocol};
 
 struct Queue<T> {
     inner: Mutex<Vec<T>>,
@@ -55,21 +56,21 @@ impl<T> Default for QueueConsensus<T> {
     }
 }
 
-impl<T: Clone> Consensus<T> for QueueConsensus<T> {
-    fn decide(&self, value: T, id: usize) -> T {
+impl<T> Consensus<T> for QueueConsensus<T> {
+    unsafe fn decide(&self, value: T, id: usize) -> &T {
         assert!(id < self.n);
 
         self.propose(value, id);
 
         if self.queue.deq() == WIN {
-            cell_read(&self.proposed[id]).unwrap()
+            cell_read(&self.proposed[id]).as_ref().unwrap()
         } else {
-            cell_read(&self.proposed[1 - id]).unwrap()
+            cell_read(&self.proposed[1 - id]).as_ref().unwrap()
         }
     }
 }
 
-impl<T: Clone> ConsensusProtocol<T> for QueueConsensus<T> {
+impl<T> ConsensusProtocol<T> for QueueConsensus<T> {
     fn propose(&self, value: T, id: usize) {
         cell_write(&self.proposed[id], Some(value));
     }

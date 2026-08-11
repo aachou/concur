@@ -1,27 +1,8 @@
-use crate::cell::UnsafeCell;
-
-#[cfg(not(feature = "check-loom"))]
-pub(crate) fn cell_read<T: Clone>(cell: &UnsafeCell<T>) -> T {
-    unsafe { (*cell.get()).clone() }
-}
-
-#[cfg(feature = "check-loom")]
-pub(crate) fn cell_read<T: Clone>(cell: &UnsafeCell<T>) -> T {
-    unsafe { (*cell.get().deref()).clone() }
-}
-
-#[cfg(not(feature = "check-loom"))]
-pub(crate) fn cell_write<T>(cell: &UnsafeCell<T>, value: T) {
-    unsafe { *cell.get() = value }
-}
-
-#[cfg(feature = "check-loom")]
-pub(crate) fn cell_write<T>(cell: &UnsafeCell<T>, value: T) {
-    unsafe { *cell.get_mut().deref() = value }
-}
-
 pub trait Consensus<T>: Default {
-    fn decide(&self, value: T, id: usize) -> T;
+    /// # Safety
+    ///
+    /// 一个线程 id 只能调用一次。
+    unsafe fn decide(&self, value: T, id: usize) -> &T;
 }
 
 pub(crate) trait ConsensusProtocol<T>: Consensus<T> {

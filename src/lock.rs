@@ -1,9 +1,9 @@
 pub mod api;
-pub mod bakery_lock;
-pub mod filter_lock;
-pub mod peterson_lock;
+pub mod bakery;
+pub mod filter;
+pub mod peterson;
 
 pub use api::*;
-pub use bakery_lock::*;
-pub use filter_lock::*;
-pub use peterson_lock::*;
+pub use bakery::*;
+pub use filter::*;
+pub use peterson::*;

@@ -19,7 +19,7 @@ impl BoundedRawLock for PetersonLock {
             n,
         }
     }
-    fn lock(&self, id: usize) {
+    unsafe fn lock(&self, id: usize) {
         assert!(id < self.n);
 
         self.flag[id].store(true, Ordering::Relaxed);

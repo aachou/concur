@@ -1,7 +1,8 @@
 use crate::cell::UnsafeCell;
 use crate::sync::{Mutex, MutexGuard};
+use crate::{cell_read, cell_write};
 
-use super::api::{Consensus, ConsensusProtocol, cell_read, cell_write};
+use super::api::{Consensus, ConsensusProtocol};
 
 struct Assign {
     inner: Mutex<Vec<i32>>,
@@ -62,8 +63,8 @@ impl<T> Default for MultiConsensus<T> {
     }
 }
 
-impl<T: Clone> Consensus<T> for MultiConsensus<T> {
-    fn decide(&self, value: T, id: usize) -> T {
+impl<T> Consensus<T> for MultiConsensus<T> {
+    unsafe fn decide(&self, value: T, id: usize) -> &T {
         assert!(id < self.proposed.len());
 
         self.propose(value, id);
@@ -82,11 +83,11 @@ impl<T: Clone> Consensus<T> for MultiConsensus<T> {
             }
         }
 
-        cell_read(&self.proposed[win]).unwrap()
+        cell_read(&self.proposed[win]).as_ref().unwrap()
     }
 }
 
-impl<T: Clone> ConsensusProtocol<T> for MultiConsensus<T> {
+impl<T> ConsensusProtocol<T> for MultiConsensus<T> {
     fn propose(&self, value: T, id: usize) {
         cell_write(&self.proposed[id], Some(value));
     }
