@@ -2,7 +2,7 @@
 
 > 使用 [Loom](https://github.com/tokio-rs/loom) 对 Relaxed Behaviors & Orderings 以及一些并发数据结构进行测试，还有一些并发编程的学习文档。
 
-## 1. Relaxed Behaviors & Orderings 测试
+## 1. Relaxed Behaviors & Orderings
 
 ### 1.1 Multi-Valued Memory — Load Hoisting
 
@@ -56,15 +56,15 @@ Store hoisting (`r1=X;Y=r1 || r2=Y;X=1 → r1=r2=1`) 在 C++11 内存模型下�
 | `store_hoisting_syntactic_dep` | 语法依赖 | 允许 | 不支持 | 允许 |
 | `store_hoisting_syntactic_dep_rw_coherence` | 语法依赖 + RW coherence | 不允许 | 不支持 | 不允许 |
 
-## 2. 经典自旋锁实现
+## 2. 自旋锁
 
 | Lock | 算法 | 最大线程数 | 同步模式 |
 |------|------|-----------|---------|
-| `PetersonLock` | Peterson 算法（双共享 flag + victim） | 2 | SC fence + Release/Acquire |
+| `PetersonLock` | Peterson 算法（flag + victim） | 2 | SC fence + Release/Acquire |
 | `FilterLock` | Peterson 推广（N-1 层过滤） | N | SC fence + Release/Acquire |
 | `BakeryLock` | Bakery 算法（取号排队） | N | SC fence + Release/Acquire |
 
-## 3. Consensus 实现
+## 3. 共识协议
 
 | 共识对象 | 算法 | 最大线程数 | 同步模式 |
 |---------|------|-----------|---------|
@@ -73,7 +73,14 @@ Store hoisting (`r1=X;Y=r1 || r2=Y;X=1 → r1=r2=1`) 在 C++11 内存模型下�
 | `MultiConsensus` | 多重赋值（打锦标赛，最先赋值者获胜） | N | Mutex lock |
 | `CasConsensus` | compare & swap（执行 cas 成功者获胜） | ∞ | Release/Acquire |
 
-## 4. 运行
+## 4. 并发对象通用构造
+
+| 通用构造 | 算法 | 最大线程数 | 同步模式 |
+|---------|------|-----------|---------|
+| `LFUniversal` | 无锁通用构造（重放日志） | ∞ | Release/Acquire |
+| `WFUniversal` | 无等待通用构造（帮助机制） | ∞ | Release/Acquire |
+
+## 5. 运行
 
 ```powershell
 cargo test          # 基本测试
@@ -82,7 +89,7 @@ cargo loom-test     # 使用 loom 进行测试
 
 运行测试，Loom 会穷举所有线程交错和重排序，验证断言在所有调度下均成立。
 
-## 5. 推荐学习资料
+## 6. 推荐学习资料
 
 - [KAIST CS431: Concurrent Programming](https://github.com/kaist-cp/cs431)
 - [多处理器编程的艺术](./docs/multiprocessor-programming-chp-01.md)
@@ -96,7 +103,7 @@ cargo loom-test     # 使用 loom 进行测试
 - [风险指针](./docs/hazard-pointers.md)
 - [基于行为导向的并发](./docs/boc.md)
 
-## 6. 参考
+## 7. 参考
 
 - [Promising Semantics](https://sf.snu.ac.kr/promise-concurrency/)
 - [KAIST CS431: Concurrent Programming](https://github.com/kaist-cp/cs431)

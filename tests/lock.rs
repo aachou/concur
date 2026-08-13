@@ -59,9 +59,7 @@ mod correctness {
                 })
                 .collect::<Vec<_>>();
 
-            ts
-                .into_iter()
-                .for_each(|handle| handle.join().unwrap());
+            ts.into_iter().for_each(|handle| handle.join().unwrap());
 
             assert_eq!(unsafe { *lock.lock(0) }, n)
         });

@@ -44,10 +44,14 @@ pub(crate) fn cell_read_mut<T>(cell: &UnsafeCell<T>) -> &mut T {
 
 #[cfg(not(feature = "check-loom"))]
 pub(crate) fn cell_write<T>(cell: &UnsafeCell<T>, value: T) {
-    unsafe { *cell.get() = value }
+    unsafe {
+        *cell.get() = value;
+    }
 }
 
 #[cfg(feature = "check-loom")]
 pub(crate) fn cell_write<T>(cell: &UnsafeCell<T>, value: T) {
-    unsafe { *cell.get_mut().deref() = value }
+    unsafe {
+        cell.with_mut(|p| *p = value);
+    }
 }
