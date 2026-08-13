@@ -1,7 +1,7 @@
 #[cfg(not(feature = "check-loom"))]
 mod basic {
-    use relaxed_memory_concurrency::consensus::{CasConsensus, Consensus, MultiConsensus};
-    use relaxed_memory_concurrency::thread;
+    use concur::consensus::{CasConsensus, Consensus, MultiConsensus};
+    use concur::thread;
 
     fn test_consensus<C: Consensus<usize> + Sync>(c: C) {
         let succ = thread::scope(|s| {
@@ -28,14 +28,14 @@ mod basic {
 }
 
 mod correctness {
-    use relaxed_memory_concurrency::consensus::{
+    use concur::consensus::{
         CasConsensus, Common2Consensus, Consensus, MultiConsensus, QueueConsensus,
     };
-    use relaxed_memory_concurrency::sync::Arc;
-    use relaxed_memory_concurrency::thread;
+    use concur::sync::Arc;
+    use concur::thread;
 
     fn test_consensus<C: Consensus<usize> + Send + Sync + 'static>() {
-        relaxed_memory_concurrency::model(|| {
+        concur::model(|| {
             let c = Arc::new(C::default());
 
             let c_ = Arc::clone(&c);

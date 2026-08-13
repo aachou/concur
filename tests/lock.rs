@@ -1,9 +1,7 @@
 #[cfg(not(feature = "check-loom"))]
 mod basic {
-    use relaxed_memory_concurrency::lock::{
-        BakeryLock, BoundedLock, BoundedRawLock, FilterLock, PetersonLock,
-    };
-    use relaxed_memory_concurrency::thread;
+    use concur::lock::{BakeryLock, BoundedLock, BoundedRawLock, FilterLock, PetersonLock};
+    use concur::thread;
 
     fn test_lock<L: BoundedRawLock>(n: usize) {
         let lock = BoundedLock::<L, usize>::new(n, 0);
@@ -40,14 +38,12 @@ mod basic {
 }
 
 mod correctness {
-    use relaxed_memory_concurrency::lock::{
-        BakeryLock, BoundedLock, BoundedRawLock, FilterLock, PetersonLock,
-    };
-    use relaxed_memory_concurrency::sync::Arc;
-    use relaxed_memory_concurrency::thread;
+    use concur::lock::{BakeryLock, BoundedLock, BoundedRawLock, FilterLock, PetersonLock};
+    use concur::sync::Arc;
+    use concur::thread;
 
     fn test_lock<L: BoundedRawLock + 'static>(n: usize) {
-        relaxed_memory_concurrency::model(move || {
+        concur::model(move || {
             let lock = Arc::new(BoundedLock::<L, usize>::new(n, 0));
 
             let ts = (0..n)

@@ -1,6 +1,6 @@
 [package]
-name = "relaxed-memory-concurrency"
-version = "0.2.0"
+name = "concur"
+version = "0.3.0"
 edition = "2024"
 
 [features]

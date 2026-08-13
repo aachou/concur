@@ -1,5 +1,3 @@
-#![allow(unused, dead_code)]
-
 use std::any::Any;
 use std::marker::PhantomData;
 use std::mem;

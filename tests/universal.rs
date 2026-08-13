@@ -1,4 +1,4 @@
-use relaxed_memory_concurrency::universal::SeqObject;
+use concur::universal::SeqObject;
 
 struct Stack<T> {
     inner: Vec<T>,
@@ -27,8 +27,8 @@ impl<T> SeqObject for Stack<T> {}
 #[cfg(not(feature = "check-loom"))]
 mod basic {
     use super::Stack;
-    use relaxed_memory_concurrency::thread;
-    use relaxed_memory_concurrency::universal::{LFUniversal, WFUniversal};
+    use concur::thread;
+    use concur::universal::{LFUniversal, WFUniversal};
 
     #[test]
     fn lf_universal() {
@@ -73,13 +73,13 @@ mod basic {
 
 mod correctness {
     use super::Stack;
-    use relaxed_memory_concurrency::sync::Arc;
-    use relaxed_memory_concurrency::thread;
-    use relaxed_memory_concurrency::universal::{LFUniversal, WFUniversal};
+    use concur::sync::Arc;
+    use concur::thread;
+    use concur::universal::{LFUniversal, WFUniversal};
 
     #[test]
     fn lf_universal() {
-        relaxed_memory_concurrency::model(|| {
+        concur::model(|| {
             let lfu = Arc::new(LFUniversal::<Stack<usize>>::new(2));
 
             let f = Arc::clone(&lfu);
@@ -101,7 +101,7 @@ mod correctness {
 
     #[test]
     fn wf_universal() {
-        relaxed_memory_concurrency::model(|| {
+        concur::model(|| {
             let wfu = Arc::new(WFUniversal::<Stack<usize>>::new(2));
 
             let w = Arc::clone(&wfu);
